@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Facts Time</title>
+  <style>
+    body {
+      margin: 0;
+      background: #e0e0e0;
+      font-family: Georgia, serif;
+      color: #000;
+    }
+
+    header {
+      background: transparent;
+      color: #000;
+      text-align: center;
+      padding: 20px;
+      font-size: 2.5rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #date {
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+
+    .menu {
+      text-align: center;
+      padding: 20px 10px;
+    }
+
+    .menu button {
+      margin: 5px 10px;
+      padding: 10px 24px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      border-radius: 999px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .menu button:hover,
+    .menu button.active {
+      background: #1e7b78f3;
+      color: #fff;
+      box-shadow: 0 0 12px #1e7b78f3;
+    }
+
+    #news-container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-buttons {
+      text-align: center;
+      margin: 20px auto 40px;
+    }
+
+    .nav-buttons button {
+      padding: 10px 24px;
+      margin: 0 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 999px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .nav-buttons button:hover {
+      background: #1e7b78f3;
+      color: #fff;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      background: #000;
+      color: white;
+      padding: 15px;
+    }
+  </style>
+</head>
+<body>
+
+<header>The Facts Time</header>
+
+<div id="date">Loading date...</div>
+
+<div class="menu">
+  <button onclick="showCategory(0)" class="active">Business</button>
+  <button onclick="showCategory(1)">Health</button>
+  <button onclick="showCategory(2)">General</button>
+  <button onclick="showCategory(3)">Entertainment</button>
+  <button onclick="showCategory(4)">Sports</button>
+</div>
+
+<div id="news-container">Loading news...</div>
+
+<div class="nav-buttons">
+  <button id="prevBtn" onclick="prevTab()">Previous</button>
+  <button id="nextBtn" onclick="nextTab()">Next</button>
+</div>
+
+<footer>&copy; 2025 The Facts Time | All Rights Reserved</footer>
+
+<script>
+  const apiKey = '20b4a516218f428ab5b085005b0aafb0';
+  // Only categories supported by free NewsAPI /top-headlines endpoint
+  const categories = ['business', 'health', 'general', 'entertainment', 'sports'];
+  const newsContainer = document.getElementById('news-container');
+  let currentTab = 0;
+  let currentArticles = [];
+
+  document.getElementById('date').textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  function showCategory(index) {
+    currentTab = index;
+    fetchNews(categories[index]);
+    document.querySelectorAll('.menu button').forEach((btn, i) => {
+      btn.classList.toggle('active', i === index);
+    });
+    document.getElementById('prevBtn').disabled = index === 0;
+    document.getElementById('nextBtn').disabled = index === categories.length - 1;
+  }
+
+  function prevTab() {
+    if(currentTab > 0) showCategory(currentTab - 1);
+  }
+
+  function nextTab() {
+    if(currentTab < categories.length - 1) showCategory(currentTab + 1);
+  }
+
+  async function fetchNews(category) {
+    newsContainer.innerHTML = 'Loading news...';
+    // Use country=india as it is required for category endpoint on free plan
+    const url = `https://newsapi.org/v2/top-headlines?country=in&category=${category}&pageSize=5&apiKey=${apiKey}`;
+
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`NewsAPI error: ${res.status}`);
+      const data = await res.json();
+
+      currentArticles = data.articles;
+
+      if (!data.articles || data.articles.length === 0) {
+        newsContainer.innerHTML = `<p>No news found for <strong>${category}</strong>.</p>`;
+        return;
+      }
+
+      let html = `<div style="text-transform: uppercase; font-weight: bold; margin-bottom: 10px;">${category}</div>`;
+      data.articles.forEach((article, i) => {
+        html += `
+          <div style="margin-bottom:30px;">
+            <div style="font-size:1.4rem; font-weight:bold; margin-bottom:10px;">${article.title}</div>
+            ${article.urlToImage ? `<img src="${article.urlToImage}" alt="News Image" style="max-width:100%; border-radius:6px; margin-bottom:10px;">` : ''}
+            <div style="font-size:1.1rem; line-height:1.6;" id="desc-${i}">
+              ${article.description || 'No description available.'}
+              <br>
+              <span style="color:#1e7b78f3; cursor:pointer; font-weight:bold;" onclick="showFullContent(${i})">Read more</span>
+            </div>
+          </div>
+        `;
+      });
+
+      newsContainer.innerHTML = html;
+
+    } catch (error) {
+      newsContainer.innerHTML = `<p style="color:red;">Failed to fetch news: ${error.message}</p>`;
+    }
+  }
+
+  function showFullContent(index) {
+    const article = currentArticles[index];
+    const contentDiv = document.getElementById(`desc-${index}`);
+
+    const fullTextRaw = article.content || article.description || 'Full content not available.';
+    const fullText = fullTextRaw.replace(/\[\+\d+ chars\]/, '');
+
+    contentDiv.innerHTML = fullText;
+  }
+
+  // Load the first category on page load
+  showCategory(0);
+</script>
+
+</body>
+</html>

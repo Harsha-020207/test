@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Facts Time</title>
+  <style>
+    /* Your existing CSS here (keep the same styles you had) */
+  </style>
+</head>
+<body>
+
+<header>The Facts Time</header>
+
+<div id="date">Loading date...</div>
+
+<div class="menu">
+  <button onclick="showCategory(0)" class="active">Business</button>
+  <button onclick="showCategory(1)">Climate</button>
+  <button onclick="showCategory(2)">Crime</button>
+  <button onclick="showCategory(3)">Movies</button>
+  <button onclick="showCategory(4)">Sports</button>
+</div>
+
+<div id="news-container" style="max-width: 900px; margin: 30px auto; background: rgba(255,255,255,0.7); padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); font-family: Georgia, serif; color: #000;">
+  Loading news...
+</div>
+
+<div class="nav-buttons" style="text-align:center; margin:20px auto 40px;">
+  <button id="prevBtn" onclick="prevTab()">Previous</button>
+  <button id="nextBtn" onclick="nextTab()">Next</button>
+</div>
+
+<footer style="text-align:center; font-size:0.9rem; background:#000; color:#fff; padding:15px;">
+  &copy; 2025 The Facts Time | All Rights Reserved
+</footer>
+
+<script>
+  const apiKey = '20b4a516218f428ab5b085005b0aafb0';
+  const categories = ['business', 'climate', 'crime', 'movies', 'sports'];
+  const newsContainer = document.getElementById('news-container');
+  let currentTab = 0;
+
+  document.getElementById('date').textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+  });
+
+  function showCategory(index) {
+    currentTab = index;
+    fetchNews(categories[index]);
+    document.querySelectorAll('.menu button').forEach((btn, i) => {
+      btn.classList.toggle('active', i === index);
+    });
+    document.getElementById('prevBtn').disabled = index === 0;
+    document.getElementById('nextBtn').disabled = index === categories.length -1;
+  }
+
+  function prevTab() {
+    if(currentTab > 0) showCategory(currentTab -1);
+  }
+  function nextTab() {
+    if(currentTab < categories.length -1) showCategory(currentTab +1);
+  }
+
+  async function fetchNews(category) {
+    newsContainer.innerHTML = 'Loading news...';
+
+    // Map your categories to NewsAPI categories or use your own queries
+    let query = '';
+    switch(category) {
+      case 'business':
+        query = 'business';
+        break;
+      case 'climate':
+        query = 'climate OR climate change OR environment';
+        break;
+      case 'crime':
+        query = 'crime OR cyber attack OR terrorism';
+        break;
+      case 'movies':
+        query = 'movies OR cinema OR film';
+        break;
+      case 'sports':
+        query = 'sports OR cricket OR football';
+        break;
+      default:
+        query = 'general';
+    }
+
+    // NewsAPI URL with your API key
+    const url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(query)}&language=en&pageSize=5&apiKey=${apiKey}`;
+
+    // Wrap NewsAPI URL in AllOrigins to avoid CORS
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+
+    try {
+      const response = await fetch(proxyUrl);
+      if(!response.ok) throw new Error(`Network response was not ok (${response.status})`);
+      const dataWrapped = await response.json();
+      const data = JSON.parse(dataWrapped.contents);
+
+      if(data.status !== 'ok' || !data.articles.length) {
+        newsContainer.innerHTML = `<p>No news found for ${category}</p>`;
+        return;
+      }
+
+      let html = `<div class="section" style="text-transform: uppercase; font-weight: bold; margin-bottom: 10px;">${category}</div>`;
+      data.articles.forEach(article => {
+        html += `
+          <div style="margin-bottom:30px;">
+            <div class="headline" style="font-size:1.6rem; font-weight:bold; margin-bottom:10px;">${article.title}</div>
+            ${article.urlToImage ? `<img src="${article.urlToImage}" alt="image" style="max-width:100%; height:auto; border-radius:6px; margin-bottom:10px;">` : ''}
+            <div class="content" style="font-size:1.1rem; line-height:1.6;">${article.description || ''} <br><a href="${article.url}" target="_blank" rel="noopener">Read more</a></div>
+          </div>
+        `;
+      });
+
+      newsContainer.innerHTML = html;
+
+    } catch(err) {
+      newsContainer.innerHTML = `<p>Error loading news: ${err.message}</p>`;
+    }
+  }
+
+  showCategory(0);
+</script>
+
+</body>
+</html>

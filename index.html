@@ -5,7 +5,133 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>The Facts Time</title>
   <style>
-    /* Your existing CSS here (keep the same styles you had) */
+    body {
+      margin: 0;
+      background: #e0e0e0;
+      font-family: Georgia, serif;
+      color: #000;
+    }
+    header {
+      background: transparent;
+      color: #000;
+      text-align: center;
+      padding: 20px;
+      font-size: 2.5rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    #date {
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 10px;
+    }
+    .menu {
+      text-align: center;
+      padding: 20px 10px;
+    }
+    .menu button {
+      margin: 5px 10px;
+      padding: 10px 24px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+      border-radius: 999px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .menu button:hover,
+    .menu button.active {
+      background: #1e7b78f3;
+      color: #fff;
+      box-shadow: 0 0 12px #1e7b78f3;
+    }
+    #news-container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      min-height: 200px;
+    }
+    .article {
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .article:last-child { border-bottom: none; }
+    .article h3 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin: 0 0 10px;
+      line-height: 1.3;
+    }
+    .meta {
+      font-size: 0.9rem;
+      opacity: 0.8;
+      margin: 4px 0 10px;
+    }
+    .article img {
+      width: 100%;
+      max-height: 360px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin: 8px 0 12px;
+    }
+    .desc {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .toggle {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      background: #fff;
+      transition: all .2s ease;
+    }
+    .toggle:hover { background: #1e7b78f3; color: #fff; }
+    .inline-expanded {
+      background: rgba(30, 123, 120, 0.06);
+      border-left: 4px solid #1e7b78f3;
+      padding: 12px 14px;
+      border-radius: 8px;
+      margin-top: 10px;
+      display: none;
+    }
+    .nav-buttons {
+      text-align: center;
+      margin: 20px auto 40px;
+    }
+    .nav-buttons button {
+      padding: 10px 24px;
+      margin: 0 10px;
+      font-size: 1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 999px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .nav-buttons button:hover {
+      background: #1e7b78f3;
+      color: #fff;
+    }
+    footer {
+      text-align: center;
+      font-size: 0.9rem;
+      background: #000;
+      color: white;
+      padding: 15px;
+    }
   </style>
 </head>
 <body>
@@ -22,106 +148,95 @@
   <button onclick="showCategory(4)">Sports</button>
 </div>
 
-<div id="news-container" style="max-width: 900px; margin: 30px auto; background: rgba(255,255,255,0.7); padding: 40px 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); font-family: Georgia, serif; color: #000;">
-  Loading news...
-</div>
+<div id="news-container">Loading news...</div>
 
-<div class="nav-buttons" style="text-align:center; margin:20px auto 40px;">
+<div class="nav-buttons">
   <button id="prevBtn" onclick="prevTab()">Previous</button>
   <button id="nextBtn" onclick="nextTab()">Next</button>
 </div>
 
-<footer style="text-align:center; font-size:0.9rem; background:#000; color:#fff; padding:15px;">
-  &copy; 2025 The Facts Time | All Rights Reserved
-</footer>
+<footer>&copy; 2025 The Facts Time | All Rights Reserved</footer>
 
 <script>
-  const apiKey = '20b4a516218f428ab5b085005b0aafb0';
-  const categories = ['business', 'climate', 'crime', 'movies', 'sports'];
-  const newsContainer = document.getElementById('news-container');
+  // ===== CONFIG =====
+  const apiKey = "c6f4aa7f0316c81c76e7092b411c17d1"; // your verified key
+  const categories = ["Business", "Climate", "Crime", "Movies", "Sports"];
   let currentTab = 0;
 
+  const searchQueries = {
+    Business: "business OR economy OR finance OR startup",
+    Climate: "climate OR environment OR pollution OR global warming",
+    Crime: "crime OR police OR fraud OR scam",
+    Movies: "Bollywood OR movies OR cinema OR film",
+    Sports: "cricket OR football OR sports OR tennis"
+  };
+
+  // Show today's date
   document.getElementById('date').textContent = new Date().toLocaleDateString(undefined, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   });
 
+  // Switch tabs
   function showCategory(index) {
     currentTab = index;
-    fetchNews(categories[index]);
-    document.querySelectorAll('.menu button').forEach((btn, i) => {
-      btn.classList.toggle('active', i === index);
+    document.querySelectorAll(".menu button").forEach((btn, i) => {
+      btn.classList.toggle("active", i === index);
     });
-    document.getElementById('prevBtn').disabled = index === 0;
-    document.getElementById('nextBtn').disabled = index === categories.length -1;
+    document.getElementById("prevBtn").disabled = index === 0;
+    document.getElementById("nextBtn").disabled = index === categories.length - 1;
+    fetchNews(categories[index]);
   }
+  function prevTab(){ if(currentTab > 0) showCategory(currentTab - 1); }
+  function nextTab(){ if(currentTab < categories.length - 1) showCategory(currentTab + 1); }
 
-  function prevTab() {
-    if(currentTab > 0) showCategory(currentTab -1);
-  }
-  function nextTab() {
-    if(currentTab < categories.length -1) showCategory(currentTab +1);
-  }
-
+  // Fetch news from GNews
   async function fetchNews(category) {
-    newsContainer.innerHTML = 'Loading news...';
+    const query = searchQueries[category];
+    const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&country=in&max=6&apikey=${apiKey}`;
 
-    // Map your categories to NewsAPI categories or use your own queries
-    let query = '';
-    switch(category) {
-      case 'business':
-        query = 'business';
-        break;
-      case 'climate':
-        query = 'climate OR climate change OR environment';
-        break;
-      case 'crime':
-        query = 'crime OR cyber attack OR terrorism';
-        break;
-      case 'movies':
-        query = 'movies OR cinema OR film';
-        break;
-      case 'sports':
-        query = 'sports OR cricket OR football';
-        break;
-      default:
-        query = 'general';
-    }
-
-    // NewsAPI URL with your API key
-    const url = `https://newsapi.org/v2/top-headlines?q=${encodeURIComponent(query)}&language=en&pageSize=5&apiKey=${apiKey}`;
-
-    // Wrap NewsAPI URL in AllOrigins to avoid CORS
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const container = document.getElementById("news-container");
+    container.innerHTML = "Loading news...";
 
     try {
-      const response = await fetch(proxyUrl);
-      if(!response.ok) throw new Error(`Network response was not ok (${response.status})`);
-      const dataWrapped = await response.json();
-      const data = JSON.parse(dataWrapped.contents);
+      const res = await fetch(url);
+      const data = await res.json();
 
-      if(data.status !== 'ok' || !data.articles.length) {
-        newsContainer.innerHTML = `<p>No news found for ${category}</p>`;
+      if (!data.articles || data.articles.length === 0) {
+        container.innerHTML = `<p>No news found for <strong>${category}</strong>.</p>`;
         return;
       }
 
-      let html = `<div class="section" style="text-transform: uppercase; font-weight: bold; margin-bottom: 10px;">${category}</div>`;
+      container.innerHTML = `<div style="text-transform:uppercase;font-weight:bold;margin-bottom:10px;">${category}</div>`;
+
       data.articles.forEach(article => {
-        html += `
-          <div style="margin-bottom:30px;">
-            <div class="headline" style="font-size:1.6rem; font-weight:bold; margin-bottom:10px;">${article.title}</div>
-            ${article.urlToImage ? `<img src="${article.urlToImage}" alt="image" style="max-width:100%; height:auto; border-radius:6px; margin-bottom:10px;">` : ''}
-            <div class="content" style="font-size:1.1rem; line-height:1.6;">${article.description || ''} <br><a href="${article.url}" target="_blank" rel="noopener">Read more</a></div>
-          </div>
+        const div = document.createElement("div");
+        div.className = "article";
+
+        div.innerHTML = `
+          <h3>${article.title}</h3>
+          <div class="meta">${article.source?.name || ""} · ${new Date(article.publishedAt).toLocaleString()}</div>
+          ${article.image ? `<img src="${article.image}" alt="">` : ""}
+          <div class="desc">${article.description || "No description available."}</div>
+          <div class="inline-expanded">${article.content || "Full content not available in free API."}</div>
+          <button class="toggle">Read more</button>
         `;
+
+        const toggleBtn = div.querySelector(".toggle");
+        const expanded = div.querySelector(".inline-expanded");
+        toggleBtn.addEventListener("click", () => {
+          const isHidden = expanded.style.display === "none" || expanded.style.display === "";
+          expanded.style.display = isHidden ? "block" : "none";
+          toggleBtn.textContent = isHidden ? "Show less" : "Read more";
+        });
+
+        container.appendChild(div);
       });
-
-      newsContainer.innerHTML = html;
-
-    } catch(err) {
-      newsContainer.innerHTML = `<p>Error loading news: ${err.message}</p>`;
+    } catch (err) {
+      container.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
     }
   }
 
+  // Load first tab
   showCategory(0);
 </script>
 
